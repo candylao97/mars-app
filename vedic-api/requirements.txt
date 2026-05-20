@@ -1,0 +1,11 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pyswisseph==2.10.3.2
+anthropic==0.40.0
+python-dotenv==1.2.1
+tzdata==2024.2
+httpx==0.28.1
+timezonefinder==6.5.7
+zhconv==1.4.3
+pytest==8.3.4

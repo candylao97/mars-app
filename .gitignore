@@ -1,0 +1,34 @@
+# macOS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# 密钥 / 环境变量 —— 任何 .env 都不进 git
+.env
+.env.*
+!.env.example
+!*/.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+.vercel/
+.turbo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 解读输出归档(本地手动生成,别污染 repo)
+解读_*.txt
