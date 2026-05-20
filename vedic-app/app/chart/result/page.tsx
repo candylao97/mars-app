@@ -329,7 +329,7 @@ export default function ResultPage() {
                 className="w-44 sm:w-52 rounded-lg"
               />
               <p className="mt-4 text-base text-foreground">
-                随喜结缘 <span className="text-accent">❤︎</span>
+                手搓不易 随喜结缘 <span className="text-accent">❤︎</span>
               </p>
               <p className="mt-1 text-xs text-muted">
                 愿这份解读对你有所启发
