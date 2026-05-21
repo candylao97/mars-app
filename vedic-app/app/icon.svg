@@ -1,0 +1,7 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <mask id="moon">
+    <rect width="64" height="64" fill="white"/>
+    <circle cx="42" cy="32" r="20" fill="black"/>
+  </mask>
+  <circle cx="32" cy="32" r="26" fill="#b45309" mask="url(#moon)"/>
+</svg>
