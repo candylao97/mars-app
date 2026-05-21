@@ -374,6 +374,7 @@ function InterpretationBlock({
     // 2. 任何 bullet (· ) 前面的空行都收紧成单换行
     //    覆盖:小标题→第一条 / 同组内两条之间 / 模型出现的任何 ·-前空行
     .replace(/\n\n+(?=·\s)/g, "\n");
+  void chart; // chart param kept for RetryButton path; unused here
 
   // 流式还没收到第一个 token:显示脉动占位
   if (isStreaming && text.length === 0) {
@@ -390,18 +391,83 @@ function InterpretationBlock({
     );
   }
 
-  // 流式或终态:都用 article 渲染累积文本;流式时在末尾画一个闪动光标
+  // 流式中(已有部分文字) 或 完成:都用 article 渲染;流式时在末尾画闪动光标
   return (
-    <article className="rounded-md border border-border bg-card px-5 py-6 text-[15px] leading-relaxed text-foreground whitespace-pre-wrap">
-      {text}
-      {isStreaming && (
-        <span
-          className="ml-0.5 inline-block h-[1em] w-[2px] -mb-[2px] animate-pulse bg-accent align-text-bottom"
-          aria-hidden
-        />
-      )}
-    </article>
+    <div className="space-y-3">
+      <article className="rounded-md border border-border bg-card px-5 py-6 text-[15px] leading-relaxed text-foreground whitespace-pre-wrap">
+        {text}
+        {isStreaming && (
+          <span
+            className="ml-0.5 inline-block h-[1em] w-[2px] -mb-[2px] animate-pulse bg-accent align-text-bottom"
+            aria-hidden
+          />
+        )}
+      </article>
+      {state.status === "ok" && <CopyButton text={text} />}
+    </div>
   );
+}
+
+type CopyState = "idle" | "ok" | "fail";
+
+function CopyButton({ text }: { text: string }) {
+  const [state, setState] = useState<CopyState>("idle");
+
+  async function handleCopy() {
+    const ok = await copyToClipboard(text);
+    setState(ok ? "ok" : "fail");
+    setTimeout(() => setState("idle"), 2000);
+  }
+
+  const label =
+    state === "ok"
+      ? "已复制 ✓"
+      : state === "fail"
+        ? "复制失败,请长按选中"
+        : "复制全文";
+
+  return (
+    <div className="flex justify-end">
+      <button
+        type="button"
+        onClick={handleCopy}
+        className={`text-xs transition-colors ${
+          state === "fail"
+            ? "text-red-600"
+            : "text-muted hover:text-accent"
+        }`}
+      >
+        {label}
+      </button>
+    </div>
+  );
+}
+
+/** 复制到剪贴板,带 fallback 兼容微信 WebView / 老浏览器 */
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // ignore, fall through to legacy
+  }
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return ok;
+  } catch {
+    return false;
+  }
 }
 
 function humanizeInterpretError(raw: string): string {
