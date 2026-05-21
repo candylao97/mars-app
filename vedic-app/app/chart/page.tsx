@@ -309,6 +309,10 @@ export default function ChartFormPage() {
                         <li key={`${hit.lat}-${hit.lon}-${i}`}>
                           <button
                             type="button"
+                            // iOS Safari 修:阻止 mousedown 默认行为(包括把焦点从输入框抢走),
+                            // 这样 tap 期间页面不重排,click 能稳定落在 button 上。
+                            // 不要加 onTouchStart preventDefault,会把 iOS 后续合成的 click 事件也屏蔽掉。
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
                               setSelectedPlace(hit);
                               setHits([]);
