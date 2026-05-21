@@ -163,7 +163,7 @@ export default function ResultPage() {
             </h1>
             <p className="mt-2 text-sm text-muted">
               {formatBirthLocal(input.birth_local)} ·{" "}
-              {input.place_display || `${input.lat}, ${input.lon}`} · {input.tz}
+              {input.place_display || `${input.lat}, ${input.lon}`}
             </p>
           </header>
 
