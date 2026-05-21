@@ -309,10 +309,17 @@ export default function ChartFormPage() {
                         <li key={`${hit.lat}-${hit.lon}-${i}`}>
                           <button
                             type="button"
-                            // iOS Safari 修:阻止 mousedown 默认行为(包括把焦点从输入框抢走),
-                            // 这样 tap 期间页面不重排,click 能稳定落在 button 上。
-                            // 不要加 onTouchStart preventDefault,会把 iOS 后续合成的 click 事件也屏蔽掉。
+                            // 三层防御来抓 iOS Safari 那个 tap-then-blur-then-reflow 的坑:
+                            // - desktop:onMouseDown preventDefault 阻止 focus 抢走 → click 正常
+                            // - iOS Safari:在 touchend 同步选中,不等浏览器合成的 click
+                            //   (那个 click 会在键盘收起 + 页面 reflow 之后触发,大概率落空)
+                            //   preventDefault 阻止后续合成的 mouse/click 链,避免 onClick 重复触发
                             onMouseDown={(e) => e.preventDefault()}
+                            onTouchEnd={(e) => {
+                              e.preventDefault();
+                              setSelectedPlace(hit);
+                              setHits([]);
+                            }}
                             onClick={() => {
                               setSelectedPlace(hit);
                               setHits([]);
