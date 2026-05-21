@@ -9,6 +9,7 @@ FastAPI 入口。
 服务设计为内网服务,Next.js Route Handler 做唯一调用方,所以不开放 CORS。
 """
 
+import hashlib
 import logging
 import os
 
@@ -40,6 +41,21 @@ from .models import (
 )
 
 DEFAULT_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+
+# 解读缓存:同一张盘 + 同一天的解读,直接命中,不再烧 token。
+# in-memory dict,FastAPI 重启会清空,MVP 阶段够用;后面要持久化再上 Redis。
+# key = sha256(birth_utc + lat + lon + today)
+_INTERPRETATION_CACHE: dict[str, str] = {}
+_INTERPRETATION_CACHE_MAX = 5000  # 防止无限增长;到上限简单清空(MVP 策略)
+
+
+def _cache_key(chart: ChartResult, today: str) -> str:
+    h = hashlib.sha256()
+    h.update(chart.meta.birth_utc.encode())
+    # 经纬度限到 4 位小数,跟 Nominatim 返回精度一致
+    h.update(f"{round(chart.meta.lat, 4)},{round(chart.meta.lon, 4)}".encode())
+    h.update(today.encode())
+    return h.hexdigest()[:16]
 
 app = FastAPI(title="Vedic Chart API", version="0.1.0")
 
@@ -85,10 +101,32 @@ def interpret_endpoint(payload: InterpretRequest):
         )
 
     chart = payload.chart
-    system_prompt, user_prompt, _today = build_prompts(chart, today=payload.today)
+    system_prompt, user_prompt, today = build_prompts(chart, today=payload.today)
+    cache_key = _cache_key(chart, today)
+
+    # 缓存命中:直接吐文本,Anthropic 一次都不调
+    cached = _INTERPRETATION_CACHE.get(cache_key)
+    if cached is not None:
+        logger.info("interpret CACHE HIT key=%s len=%d", cache_key, len(cached))
+
+        def yield_cached():
+            yield cached.encode("utf-8")
+
+        return StreamingResponse(
+            yield_cached(),
+            media_type="text/plain; charset=utf-8",
+            headers={
+                "Cache-Control": "no-cache, no-transform",
+                "X-Accel-Buffering": "no",
+                "X-Interpret-Cache": "HIT",
+            },
+        )
+
     client = anthropic.Anthropic(api_key=api_key)
 
     def generate():
+        chunks: list[str] = []
+        completed = False
         try:
             with client.messages.stream(
                 model=DEFAULT_MODEL,
@@ -105,6 +143,7 @@ def interpret_endpoint(payload: InterpretRequest):
             ) as stream:
                 for chunk in stream.text_stream:
                     if chunk:
+                        chunks.append(chunk)
                         yield chunk.encode("utf-8")
                 # 流结束后,把最终 usage 记到服务端日志(用于成本监控,不下发给前端)
                 final = stream.get_final_message()
@@ -116,6 +155,7 @@ def interpret_endpoint(payload: InterpretRequest):
                     getattr(u, "cache_creation_input_tokens", 0) or 0,
                     getattr(u, "cache_read_input_tokens", 0) or 0,
                 )
+                completed = True
         except anthropic.AuthenticationError as e:
             logger.error("anthropic auth failed: %s", e)
             yield f"\n\n[解读生成失败:Anthropic auth] {e}".encode("utf-8")
@@ -128,6 +168,20 @@ def interpret_endpoint(payload: InterpretRequest):
         except Exception as e:  # noqa: BLE001
             logger.exception("interpret stream crashed")
             yield f"\n\n[解读生成失败] {e}".encode("utf-8")
+        finally:
+            # 只在流完整完成时入缓存;失败的不缓存(避免把"[解读生成失败]"那种留着)
+            if completed and chunks:
+                full = "".join(chunks)
+                if len(_INTERPRETATION_CACHE) >= _INTERPRETATION_CACHE_MAX:
+                    # MVP 简单策略:满了清空,等下一轮重新攒
+                    _INTERPRETATION_CACHE.clear()
+                _INTERPRETATION_CACHE[cache_key] = full
+                logger.info(
+                    "interpret cached key=%s len=%d (cache size now %d)",
+                    cache_key,
+                    len(full),
+                    len(_INTERPRETATION_CACHE),
+                )
 
     return StreamingResponse(
         generate(),
