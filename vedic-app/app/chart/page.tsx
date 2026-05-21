@@ -267,11 +267,16 @@ export default function ChartFormPage() {
                 {timeUncertain ? "收起" : "出生时间不确定?"}
               </button>
               {timeUncertain && (
-                <p className="mt-2 rounded-md bg-accent-soft px-3 py-2 text-xs leading-relaxed text-muted-strong">
-                  不确定时间可以先选个近似值排出来看。出生时间每偏 4
-                  分钟,上升经度约移 1°,可能会影响上升星座和宫位边界。
-                  建议日后翻一翻户口本、出生证、或问问妈妈,精确到分钟最好。
-                </p>
+                <div className="mt-2 space-y-2 rounded-md bg-accent-soft px-3 py-2 text-xs leading-relaxed text-muted-strong">
+                  <p>
+                    不确定时间可以先选个近似值排出来看。出生时间每偏 4
+                    分钟,上升经度约移 1°,可能会影响上升星座和宫位边界。
+                    建议日后翻一翻户口本、出生证、或问问妈妈,精确到分钟最好。
+                  </p>
+                  <p>
+                    如果记录上写的是"24 时"(老一辈或老医院记录的写法),其实等于第二天的 0 时,日期要往后挪一天、时间填 0。
+                  </p>
+                </div>
               )}
             </div>
 
