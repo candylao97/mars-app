@@ -275,7 +275,7 @@ export default function ChartFormPage() {
               )}
             </div>
 
-            <Field label="出生地点" required>
+            <Field label="出生城市" required>
               {selectedPlace ? (
                 <SelectedPlaceCard
                   place={selectedPlace}
@@ -373,7 +373,7 @@ function missingFieldsHint(
   const missing: string[] = [];
   if (!birthDate) missing.push("出生日期");
   if (!birthTime) missing.push("出生时间");
-  if (!selectedPlace) missing.push("出生地点");
+  if (!selectedPlace) missing.push("出生城市");
   if (missing.length === 0) return "";
   return `还需要填:${missing.join("、")}`;
 }
