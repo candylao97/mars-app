@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -115,6 +116,7 @@ export default function ChartFormPage() {
 
     setSubmitting(true);
     setSubmitError(null);
+    track("form_submitted", { has_name: !!name.trim() });
 
     const payload: BirthInput = {
       birth_local: `${birthDate}T${birthTime}:00`,

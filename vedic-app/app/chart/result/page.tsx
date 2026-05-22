@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -109,6 +110,7 @@ export default function ResultPage() {
         }
         sessionStorage.setItem(cacheKey, acc);
         setInterpret({ status: "ok", text: acc });
+        track("interpretation_completed", { length: acc.length });
       } catch (e) {
         if ((e as Error).name === "AbortError" || cancelled) return;
         setInterpret({ status: "error", error: (e as Error).message });
@@ -421,6 +423,7 @@ function CopyButton({ text }: { text: string }) {
   async function handleCopy() {
     const ok = await copyToClipboard(text);
     setState(ok ? "ok" : "fail");
+    track("copy_clicked", { result: ok ? "ok" : "fail" });
     setTimeout(() => setState("idle"), 2000);
   }
 
