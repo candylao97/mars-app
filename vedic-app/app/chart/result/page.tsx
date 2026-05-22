@@ -167,6 +167,11 @@ export default function ResultPage() {
             </p>
           </header>
 
+          {/* —————— 西方占星 vs 吠陀差异提示 —————— */}
+          <aside className="rounded-md bg-accent-soft px-4 py-3 text-xs leading-relaxed text-muted-strong">
+            你平时看到的星座来自西方占星;吠陀占星用的是另一套基于恒星实际位置的算法,两者大约差一个星座。所以你的上升、太阳星座有时会往后挪一格,不是算错了,是两套体系本来就不同。
+          </aside>
+
           {/* —————— Hero 卡片 —————— */}
           <section className="space-y-3">
             <HeroCard
