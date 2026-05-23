@@ -90,6 +90,17 @@ def interpret_endpoint(payload: InterpretRequest):
     把 ChartResult + 当前日期喂给 vedic_interpret 定稿 prompt,调 Anthropic 流式接口。
     返回 text/plain 流,客户端按 chunk 增量渲染。usage 在流结束时落日志(不下发)。
     """
+    # 维护开关:Railway 上设 MAINTENANCE_MODE=1 即可立刻暂停生成
+    # 不调 Anthropic、不烧 token,只返回友好提示
+    if os.environ.get("MAINTENANCE_MODE") == "1":
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "MAINTENANCE: 第一阶段反馈收集完毕,我们正在整理大家的意见做改进。"
+                "下一版准备好后会通过你之前留的微信通知。感谢你的测试 ❤️"
+            ),
+        )
+
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         raise HTTPException(

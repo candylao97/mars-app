@@ -363,6 +363,18 @@ function InterpretationBlock({
   if (state.status === "idle") return null;
 
   if (state.status === "error") {
+    // 维护期(后端 MAINTENANCE_MODE=1)用柔和样式,不报红
+    if (state.error.includes("MAINTENANCE")) {
+      const msg = state.error
+        .replace(/^\d+:\s*/, "")
+        .replace(/^MAINTENANCE:\s*/, "");
+      return (
+        <div className="rounded-md border border-border bg-card px-5 py-6 text-sm text-muted-strong">
+          <p className="font-medium text-foreground">应用暂停中</p>
+          <p className="mt-2 whitespace-pre-wrap">{msg}</p>
+        </div>
+      );
+    }
     const friendly = humanizeInterpretError(state.error);
     return (
       <div className="rounded-md border border-red-300 bg-red-50 px-5 py-4 text-sm">
